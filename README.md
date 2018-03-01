@@ -24,8 +24,11 @@ Sends a message to slack. A webhook must be set up in slack so you can send info
 ### FormatJavaCucumberAndReport.js
 This takes raw Cucumber for Java .json surefire reports and formats them into a format that the auto-test-logs endpoint will understand. At the end of this action, the rule that uses the action "UpdateQTestAndScenarioWithFormattedResults" will be called
 
-### UpdateQTestAndScenarioWithFormattedResults.js
-This sets the color coding in scenario for pass/fail at the start of the script. It then logs into qTest manager and uses the auto-test-logs endpoint to bulk upload test cases, test runs, and test logs to qTest Manager. The final step is that it attemps to link requirements (you must have requirements already mapped and integrated from JIRA to qTest Manager on) with the new test cases.
+### UpdateQTestWithFormattedResults.js
+This uses the auto-test-logs endpoint to bulk upload test cases, test runs, and test logs to qTest Manager. It also attempts to tie requirements to test case if the names match.
+
+### scenarioColors.js
+This sets the color coding in scenario for pass/fail at the start of the script. 
 
 ## Sample Slack Rule Setup
 ![createslackrule](https://user-images.githubusercontent.com/4780166/35834455-db1fdc72-0aa3-11e8-89de-075b3d51c1e5.gif)
