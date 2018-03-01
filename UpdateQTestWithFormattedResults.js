@@ -8,72 +8,16 @@ var projectId = payload.projectId;
 var scenarioCount = 0;
 var scenarioList = "";
 
-// Update results in pulse - NOTE: This is for the color coding in pulse! This could be broken out into a separate rule
-for (var res of testLogs) {
-    
-    for (var step of res["test_step_logs"]) {
-        var stepName = step.description;
-        var stepStatus = step.status;
-        
-        // Undefined means no step definition existed and it should fail
-        if(stepStatus == "undefined") {
-            stepStatus = "failed";
-        }
-        
-        // one of PASSED (green), FAILED (red), or SKIPPED (yellow)
-        var stepStatus = _.upperCase(stepStatus);
-        
-        // Call the pulsee API to update step results
-        Steps.updateStepResults(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, stepName, stepStatus);
-    }        
-}
+var standardHearders = {
+    'Content-Type': 'application/json',
+    'Authorization': constants.qTestAPIToken
+}        
 
-
-// Login and get token (basic authentication)
-var login = new Promise (
-    
-    // TODO: Swap this out for using the API token instead of username/password for simplicity; don't need an explicit login
-    function(resolve, reject) {
-        var auth = 'Basic ' + new Buffer(constants.email + ':').toString('base64');
-
-        var opts = {
-            url: "http://" + constants.ManagerURL + "/oauth/token",
-            headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': auth
-                    },
-            form: {
-                grant_type: 'password',
-                username: constants.ManagerEmail,
-                password: constants.ManagerPassword
-            }
-        };
-
-        request.post(opts, function(err, response, body) {
-            if(err) {
-                emitEvent('SlackEvent', { CannotLogIn: err });
-                reject(err);
-            }
-            else {
-                var jsonbody = JSON.parse(body);
-                if(!jsonbody.access_token) {
-                    reject("Missing token: " + body);
-                }
-
-                resolve(jsonbody.access_token);
-            }
-        });
-    }
-);
-
-var createLogsAndTCs = function(token) {
+var createLogsAndTCs = function() {
     var opts = {
-        url: "http://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
+        url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
         json: true,
-        headers: {
-                'Content-Type': 'application/json',
-                'Authorization': "bearer " + token
-                },
+        headers: standardHearders,
         body: {
             test_cycle: cycleId,
             test_logs: testLogs
@@ -83,6 +27,7 @@ var createLogsAndTCs = function(token) {
     request.post(opts, function(err, response, resbody) {
 
         if(err) {
+            emitEvent('$YOUR_SLACK_EVENT_NAME', { createLogsAndTCsErr: err });
             Promise.reject(err); 
         }
         else {
@@ -101,7 +46,7 @@ var createLogsAndTCs = function(token) {
 
 
 // TODO: This makes a best effort to link. If the TCs aren't uploaded yet, this won't work, but will on subsequent tries
-var linkReq = function(token) {
+var linkReq = function() {
     
     testLogs.forEach(function(testcase) {
         var feat = Features.getIssueLinkByFeatureName(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, testcase.featureName);
@@ -109,7 +54,7 @@ var linkReq = function(token) {
         if(feat.length === 0) // No corresponding feature exists in scenario
             return;
         
-        var reqopts = getReqBody(token, feat[0].issueKey);
+        var reqopts = getReqBody(feat[0].issueKey);
         request.post(reqopts, function(err, response, featureResBody) {
             if(err) {
                 reject(err); 
@@ -119,14 +64,14 @@ var linkReq = function(token) {
                 var reqid = featureResBody.items[0].id;
            
                 // Grab the cooresponding test case ID
-                var tcopts = getTCBody(token, testcase.name);
+                var tcopts = getTCBody(testcase.name);
                 request.post(tcopts, function(err, response, testCaseResBody) {
                     if(err) {
                         reject(err); 
                     }
                     else {
                         var tcid = testCaseResBody.items[0].id;
-                        var opts = getLinkBody(token, reqid, tcid);
+                        var opts = getLinkBody(reqid, tcid);
                         
                         request.post(opts, function(err, response, resbody) {
                             if(err) {
@@ -144,14 +89,11 @@ var linkReq = function(token) {
     });
 };
 
-function getTCBody(token, TCName) {
+function getTCBody(TCName) {
     return {
         url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/search",
         json: true,
-        headers: {
-                'Content-Type': 'application/json',
-                'Authorization': "bearer " + token
-                },
+        headers: standardHearders,
         body: {
             "object_type": "test-cases",
             "fields": [
@@ -162,14 +104,11 @@ function getTCBody(token, TCName) {
     };
 }
 
-function getReqBody(token, key) {
+function getReqBody(key) {
     return {
         url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/search",
         json: true,
-        headers: {
-                'Content-Type': 'application/json',
-                'Authorization': "bearer " + token
-                },
+        headers: standardHearders,
         body: {
             "object_type": "requirements",
             "fields": [
@@ -180,28 +119,20 @@ function getReqBody(token, key) {
     };
 }
 
-function getLinkBody(token, reqid, tcid) {
+function getLinkBody(reqid, tcid) {
     return {
         url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/requirements/" + reqid + "/link?type=test-cases",
         json: true,
-        headers: {
-                'Content-Type': 'application/json',
-                'Authorization': "bearer " + token
-                },
+        headers: standardHeaders,
         body: [
             tcid
         ]
     };
 }
 
-login.then(function(token) {
-    return token
-}).then(function(token) {
-    createLogsAndTCs(token)
-    return token
-})
-.then(function(token) {
-    linkReq(token)
+createLogsAndTCs()
+.then(function() {
+    linkReq();
 })
 .catch(function(err) {
     emitEvent('$YOUR_SLACK_EVENT_NAME', { CaughtError: err });
