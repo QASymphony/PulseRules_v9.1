@@ -37,7 +37,7 @@ var createLogsAndTCs = function() {
                 Promise.resolve("Uploaded results successfully");
             }
             else {
-                emitEvent('SlackEvent', { Error: "Wrong type"});
+                emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Wrong type"});
                 Promise.reject("Unable to upload test results");
             }
         }

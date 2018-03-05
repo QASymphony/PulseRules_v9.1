@@ -14,7 +14,7 @@ for (var res of testLogs) {
         // one of PASSED (green), FAILED (red), or SKIPPED (yellow)
         var stepStatus = _.upperCase(stepStatus);
         
-        // Call the pulsee API to update step results
+        // Call the pulse API to update step results
         Steps.updateStepResults(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, stepName, stepStatus);
     }        
 }
