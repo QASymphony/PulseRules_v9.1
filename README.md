@@ -15,7 +15,7 @@ Set up rules with your own event and with these actions. Note, anything that use
 Finally, these are only samples. Some of the actions are not 100% robust in case of failure.
 
 ### Formatters
-Each formatter will format raw test results into something the UpdateQTestWithFormattedResults action will understand. And example of what these formatted results look like can be found in the ExampleFormattedResults.json file. Attachments may be included within the formatted results as an array of attachment objects.
+Each formatter will format raw test results into something the UpdateQTestWithFormattedResults action will understand. And example of what these formatted results look like can be found in the [ExampleFormattedResults.json](ExampleFormattedResults.json) file. Attachments may be included within the formatted results as an array of attachment objects.
 
 ``` 
     attachmentObject = {
