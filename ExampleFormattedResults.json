@@ -1,0 +1,66 @@
+{
+  "projectId": 73292,
+  "test-cycle": 1118427,
+  "logs": [
+    {
+      "exe_start_date": "2018-02-16T21:31:13.074Z",
+      "exe_end_date": "2018-02-16T21:31:13.074Z",
+      "module_names": [
+        "JUnitTests"
+      ],
+      "name": "test_comment_submission",
+      "automation_content": "tests.test_comment_sandbox.TestCommentSandbox::test_comment_submission",
+      "note": "",
+      "description": "Test case imported from Python Test",
+      "status": "PASS",
+      "test_step_logs": [
+        {
+          "order": 0,
+          "description": "test_comment_submission",
+          "expected_result": "test_comment_submission",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "exe_start_date": "2018-02-16T21:31:13.074Z",
+      "exe_end_date": "2018-02-16T21:31:13.074Z",
+      "module_names": [
+        "JUnitTests"
+      ],
+      "name": "test_comment_submission_expectfail",
+      "automation_content": "tests.test_comment_sandbox.TestCommentSandbox::test_comment_submission_expectfail",
+      "note": "[{\"_\":\"self = <test_comment_sandbox.TestCommentSandbox object at 0x10eb1d9e8>, driver = <selenium.webdriver.chrome.webdriver.WebDriver (session=\\\"84f590b7c06785396cb299a5f0a5b645\\\")>\\n\\n    def test_comment_submission_expectfail(self, driver):\\n>       assert 0\\nE       assert 0\\n\\ntests/test_comment_sandbox.py:21: AssertionError\",\"$\":{\"message\":\"assert 0\"}}]",
+      "description": "Test case imported from Python Test",
+      "status": "FAIL",
+      "test_step_logs": [
+        {
+          "order": 0,
+          "description": "test_comment_submission_expectfail",
+          "expected_result": "test_comment_submission_expectfail",
+          "status": "FAIL"
+        }
+      ]
+    },
+    {
+      "exe_start_date": "2018-02-16T21:31:13.074Z",
+      "exe_end_date": "2018-02-16T21:31:13.074Z",
+      "module_names": [
+        "JUnitTests"
+      ],
+      "name": "test_basic_link",
+      "automation_content": "tests.test_static_sandbox.TestStaticSandbox::test_basic_link",
+      "note": "",
+      "description": "Test case imported from Python Test",
+      "status": "PASS",
+      "test_step_logs": [
+        {
+          "order": 0,
+          "description": "test_basic_link",
+          "expected_result": "test_basic_link",
+          "status": "PASS"
+        }
+      ]
+    }
+  ]
+}
