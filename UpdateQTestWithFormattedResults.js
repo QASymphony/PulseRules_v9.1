@@ -5,138 +5,38 @@ var testLogs = payload.logs;
 var cycleId = payload["test-cycle"];
 var projectId = payload.projectId;
 
-var scenarioCount = 0;
-var scenarioList = "";
-
-var standardHearders = {
+var standardHeaders = {
     'Content-Type': 'application/json',
     'Authorization': constants.qTestAPIToken
 }        
 
-var createLogsAndTCs = function() {
-    var opts = {
-        url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
-        json: true,
-        headers: standardHearders,
-        body: {
-            test_cycle: cycleId,
-            test_logs: testLogs
-        }
-    };
+var opts = {
+    url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
+    json: true,
+    headers: standardHeaders,
+    body: {
+        test_cycle: cycleId,
+        test_logs: testLogs
+    }
+};
 
-    request.post(opts, function(err, response, resbody) {
+request.post(opts, function(err, response, resbody) {
 
-        if(err) {
-            emitEvent('$YOUR_SLACK_EVENT_NAME', { createLogsAndTCsErr: err });
-            Promise.reject(err); 
+    if(err) {
+        emitEvent('$YOUR_SLACK_EVENT_NAME', { createLogsAndTCsErr: err });
+    }
+    else {
+        emitEvent('$YOUR_SLACK_EVENT_NAME', { AutomationLogUploaded: resbody });
+        
+        if(response.body.type == "AUTOMATION_TEST_LOG") {
+            // Try to link requirements
+            emitEvent('LinkScenarioRequirements', payload);
         }
         else {
-            emitEvent('$YOUR_SLACK_EVENT_NAME', { AutomationLogUploaded: resbody });
-            
-            if(response.body.type == "AUTOMATION_TEST_LOG") {
-                Promise.resolve("Uploaded results successfully");
-            }
-            else {
-                emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Wrong type"});
-                Promise.reject("Unable to upload test results");
-            }
+            emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Wrong type"});
         }
-    });
-};
-
-
-// TODO: This makes a best effort to link. If the TCs aren't uploaded yet, this won't work, but will on subsequent tries
-var linkReq = function() {
-    
-    testLogs.forEach(function(testcase) {
-        var feat = Features.getIssueLinkByFeatureName(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, testcase.featureName);
-
-        if(feat.length === 0) // No corresponding feature exists in scenario
-            return;
-        
-        var reqopts = getReqBody(feat[0].issueKey);
-        request.post(reqopts, function(err, response, featureResBody) {
-            if(err) {
-                reject(err); 
-            }
-            else {
-                
-                var reqid = featureResBody.items[0].id;
-           
-                // Grab the cooresponding test case ID
-                var tcopts = getTCBody(testcase.name);
-                request.post(tcopts, function(err, response, testCaseResBody) {
-                    if(err) {
-                        reject(err); 
-                    }
-                    else {
-                        var tcid = testCaseResBody.items[0].id;
-                        var opts = getLinkBody(reqid, tcid);
-                        
-                        request.post(opts, function(err, response, resbody) {
-                            if(err) {
-                                reject(err); 
-                            }
-                            else {
-                                // Success, we added a link!
-                                emitEvent('$YOUR_SLACK_EVENT_NAME', { Linking: "link added for TC: " + testcase.name + " to requirement " + feat[0].issueKey });
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    });
-};
-
-function getTCBody(TCName) {
-    return {
-        url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/search",
-        json: true,
-        headers: standardHearders,
-        body: {
-            "object_type": "test-cases",
-            "fields": [
-                "*"
-            ],
-            "query": "Name = '" + TCName + "'"
-        }
-    };
-}
-
-function getReqBody(key) {
-    return {
-        url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/search",
-        json: true,
-        headers: standardHearders,
-        body: {
-            "object_type": "requirements",
-            "fields": [
-                "*"
-            ],
-            "query": "Name ~ '" + key + "'"
-        }
-    };
-}
-
-function getLinkBody(reqid, tcid) {
-    return {
-        url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/requirements/" + reqid + "/link?type=test-cases",
-        json: true,
-        headers: standardHeaders,
-        body: [
-            tcid
-        ]
-    };
-}
-
-createLogsAndTCs()
-.then(function() {
-    linkReq();
-})
-.catch(function(err) {
-    emitEvent('$YOUR_SLACK_EVENT_NAME', { CaughtError: err });
-})
+    }
+});
 
 
 
