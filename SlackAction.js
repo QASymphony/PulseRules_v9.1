@@ -1,12 +1,22 @@
-var str = body;
+const { Webhooks } = require('@qasymphony/pulse-sdk');
 
-var request = require('request');
-var slack_webhook = constants.SlackWebHook;
+exports.handler = function (body, { clientContext: { constants, triggers } }, callback) {
+    function emitEvent(name, payload) {
+        let t = triggers.find(t => t.name === name);
+        return t && new Webhooks().invoke(t, payload);
+    }
 
-console.log('About to request slack webhook: ', slack_webhook);
+    var str = body;
 
-request({uri: slack_webhook,
-         method: 'POST',
-         json: {"text": JSON.stringify(str)}
-     }, function(error, response, body) { }
-);
+    var request = require('request');
+    var slack_webhook = constants.SlackWebHook;
+
+    console.log('About to request slack webhook: ', slack_webhook);
+
+    request({
+        uri: slack_webhook,
+        method: 'POST',
+        json: { "text": JSON.stringify(str) }
+    }, function (error, response, body) { }
+    );
+}

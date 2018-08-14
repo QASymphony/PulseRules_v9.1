@@ -1,23 +1,32 @@
-var url = "http://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" + 
-   constants.JenkinsURL + '/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)';
+const { Webhooks } = require('@qasymphony/pulse-sdk');
 
-request.get({url:url, insecure: true}, function(err, response, body) {
-    if(!err) {
-        var crumb = body.split(":")[1];
-
-        var joburl = "http://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" + 
-                 constants.JenkinsURL + "/job/" + constants.JenkinsJobName + "/build?token=" + constants.JenkinsJobToken
-        var opts = {
-            url: joburl,
-            insecure: true,
-            contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-            headers: {
-                "Jenkins-Crumb": crumb
-            }
-        }
-
-        request.post(opts, function(err, res, bd) {
-            emitEvent('$YOUR_SLACK_EVENT_NAME', { JenkinsCallSuccess: "Jenkins Build just kicked off for project " + constants.JenkinsJobName }); 
-        })
+exports.handler = function (body, { clientContext: { constants, triggers } }, callback) {
+    function emitEvent(name, payload) {
+        let t = triggers.find(t => t.name === name);
+        return t && new Webhooks().invoke(t, payload);
     }
-})
+
+    var url = "http://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" +
+        constants.JenkinsURL + '/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)';
+
+    request.get({ url: url, insecure: true }, function (err, response, body) {
+        if (!err) {
+            var crumb = body.split(":")[1];
+
+            var joburl = "http://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" +
+                constants.JenkinsURL + "/job/" + constants.JenkinsJobName + "/build?token=" + constants.JenkinsJobToken
+            var opts = {
+                url: joburl,
+                insecure: true,
+                contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+                headers: {
+                    "Jenkins-Crumb": crumb
+                }
+            }
+
+            request.post(opts, function (err, res, bd) {
+                emitEvent('$YOUR_SLACK_EVENT_NAME', { JenkinsCallSuccess: "Jenkins Build just kicked off for project " + constants.JenkinsJobName });
+            })
+        }
+    })
+}

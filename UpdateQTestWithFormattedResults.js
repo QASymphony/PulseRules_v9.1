@@ -1,42 +1,48 @@
-// Specific to pulse actions
-var payload = body;
+const { Webhooks } = require('@qasymphony/pulse-sdk');
 
-var testLogs = payload.logs;
-var cycleId = payload["test-cycle"];
-var projectId = payload.projectId;
-
-var standardHeaders = {
-    'Content-Type': 'application/json',
-    'Authorization': constants.qTestAPIToken
-}        
-
-var opts = {
-    url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
-    json: true,
-    headers: standardHeaders,
-    body: {
-        test_cycle: cycleId,
-        test_logs: testLogs
+exports.handler = function (body, { clientContext: { constants, triggers } }, callback) {
+    function emitEvent(name, payload) {
+        let t = triggers.find(t => t.name === name);
+        return t && new Webhooks().invoke(t, payload);
     }
-};
 
-request.post(opts, function(err, response, resbody) {
+    // Specific to pulse actions
+    var payload = body;
 
-    if(err) {
-        emitEvent('$YOUR_SLACK_EVENT_NAME', { createLogsAndTCsErr: err });
+    var testLogs = payload.logs;
+    var cycleId = payload["test-cycle"];
+    var projectId = payload.projectId;
+
+    var standardHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': constants.qTestAPIToken
     }
-    else {
-        emitEvent('$YOUR_SLACK_EVENT_NAME', { AutomationLogUploaded: resbody });
-        
-        if(response.body.type == "AUTOMATION_TEST_LOG") {
-            // Try to link requirements
-            emitEvent('LinkScenarioRequirements', payload);
+
+    var opts = {
+        url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
+        json: true,
+        headers: standardHeaders,
+        body: {
+            test_cycle: cycleId,
+            test_logs: testLogs
+        }
+    };
+
+    request.post(opts, function (err, response, resbody) {
+
+        if (err) {
+            emitEvent('$YOUR_SLACK_EVENT_NAME', { createLogsAndTCsErr: err });
         }
         else {
-            emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Wrong type"});
+            emitEvent('$YOUR_SLACK_EVENT_NAME', { AutomationLogUploaded: resbody });
+
+            if (response.body.type == "AUTOMATION_TEST_LOG") {
+                // Try to link requirements
+                emitEvent('LinkScenarioRequirements', payload);
+            }
+            else {
+                emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Wrong type" });
+            }
         }
-    }
-});
-
-
-
+    });
+}
