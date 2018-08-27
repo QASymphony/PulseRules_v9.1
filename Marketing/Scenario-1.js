@@ -46,7 +46,7 @@ const triggerSlackWebhook = (webhook, content) => {
             method: 'POST',
             json: { text: content }
         }, (err, res, body) => {
-            if (err) { reject('Error triggering Slack webhook') }
+            if (err) { return reject(err); }
             resolve();
         });
     });
@@ -57,6 +57,7 @@ exports.handler = async (body, { clientContext: { constants, triggers } }, callb
     const projectId = constants.ProjectId;        // qTest's, ex: 1
     const qTestUrl = constants.qTestUrl;          // ex: 'http://example.com'
     const qTestToken = constants.qTestToken;      // ex: 'bearer abc-adasdd-cxzc'
+    const jiraUrl = constants.JiraUrl;            // link to issue in Slack message (optional), ex: 'https://agile.example.com'
 
     const issueKey = body.issue.key;              // Jira's, ex: 'SKV-2'
     let requirementId;                            // qTest's, ex: '20'
@@ -72,12 +73,12 @@ exports.handler = async (body, { clientContext: { constants, triggers } }, callb
         } else {
             await triggerSlackWebhook(
                 slackWebhook, 
-                `Warning: An issue without any linked test case is moved to 'Done': ${issueKey}`, 
+                `Warning: An issue without any linked test case is moved to 'Done': ${jiraUrl ? `${jiraUrl}/browse/` : ''}${issueKey}`, 
             );
             console.log('A webhook to Slack channel is triggered:', slackWebhook);
         }
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         return;
     }
 }
