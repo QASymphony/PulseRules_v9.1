@@ -44,6 +44,7 @@ const submitTestResults = async (event, qTestConfig) => {
         }
         requestData.test_logs.push({
             status: status,
+            // set start and end date to current time
             exe_start_date: new Date(),
             exe_end_date: new Date(),
             name: testCase.name,
