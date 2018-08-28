@@ -6,149 +6,127 @@ exports.handler = function (body, { clientContext: { constants, triggers } }, ca
         return t && new Webhooks().invoke(t, payload);
     }
 
-    // Specific to pulse actions
+    // Payload to be passed in: json style cucumber for java test results
+
+    /////// Pulse version
     var payload = body;
-
-    var testLogs = payload.logs;
-    var cycleId = payload["test-cycle"];
+    var testResults = payload.result;
     var projectId = payload.projectId;
+    var cycleId = payload["test-cycle"];
 
-    var scenarioCount = 0;
-    var scenarioList = "";
+    //////// Commandline version
+    //var fs = require('fs');
+    //var testResults = JSON.parse(fs.readFileSync('/Users/elise/Repos/cucumber-bdd/target/cucumber-report.json', 'utf8'));
+    //var projectId = 60676; // Pulse Automation Project
+    //var cycleId = 821416; // Pulse Automation Project
+    /// TODO: Remove above
 
-    var standardHearders = {
-        'Content-Type': 'application/json',
-        'Authorization': constants.qTestAPIToken
-    }
+    var testLogs = [];
+    //console.log("TEST RESULTS: " + testResults);
 
-    var createLogsAndTCs = new Promise(
-        function (resolve, reject) {
-            var opts = {
-                url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/auto-test-logs?type=automation",
-                json: true,
-                headers: standardHearders,
-                body: {
-                    test_cycle: cycleId,
-                    test_logs: testLogs
-                }
+    //emitEvent('SlackEvent', { TESTRESULTS: testResults });
+
+    testResults.forEach(function (feature) {
+        var featureName = feature.name;
+        feature.elements.forEach(function (testCase) {
+
+            if (!testCase.name)
+                testCase.name = "Unnamed";
+
+            TCStatus = "passed";
+
+            var reportingLog = {
+                exe_start_date: new Date(), // TODO These could be passed in
+                exe_end_date: new Date(),
+                module_names: [
+                    'Test Scenarios'
+                ],
+                name: testCase.name,
+                automation_content: feature.uri + "#" + testCase.name
             };
 
-            request.post(opts, function (err, response, resbody) {
+            var testStepLogs = [];
+            order = 0;
+            stepNames = [];
+            attachments = [];
 
-                emitEvent('SlackEvent', { Postmade: "ERR: " + err + " RESPONSBODYE: " + JSON.parse(response.body) });
+            testCase.steps.forEach(function (step) {
+                stepNames.push(step.name);
 
-                if (err) {
-                    emitEvent('SlackEvent', { createLogsAndTCsErr: err });
+                var status = step.result.status;
+                var actual = step.name;
 
-                    reject(err);
+                if (TCStatus == "passed" && status == "skipped") {
+                    TCStatus = "skipped";
                 }
-                else {
-                    emitEvent('SlackEvent', { AutomationLogUploaded: resbody });
-
-                    if (response.body.type == "AUTOMATION_TEST_LOG") {
-                        resolve("Uploaded results successfully");
-                    }
-                    else {
-                        emitEvent('SlackEvent', { Error: "Wrong type" });
-                        reject("Unable to upload test results");
-                    }
+                if (status == "failed") {
+                    TCStatus = "failed";
+                    actual = step.result.error_message;
                 }
-            });
-        }
-
-    );
-
-
-    // TODO: This makes a best effort to link. If the TCs aren't uploaded yet, this won't work, but will on subsequent tries
-    var linkReq = function () {
-
-        testLogs.forEach(function (testcase) {
-            var feat = Features.getIssueLinkByFeatureName(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, testcase.featureName);
-
-            if (feat.length === 0) // No corresponding feature exists in scenario
-                return;
-
-            var reqopts = getReqBody(feat[0].issueKey);
-            request.post(reqopts, function (err, response, featureResBody) {
-                if (err) {
-                    reject(err);
+                if (status == "undefined") {
+                    TCStatus = "failed";
+                    status = "failed";
                 }
-                else {
 
-                    var reqid = featureResBody.items[0].id;
+                // Are there an attachment for this step?
+                if ("embeddings" in step) {
+                    console.log("Has attachment");
 
-                    // Grab the cooresponding test case ID
-                    var tcopts = getTCBody(testcase.name);
-                    request.post(tcopts, function (err, response, testCaseResBody) {
-                        if (err) {
-                            reject(err);
-                        }
-                        else {
-                            var tcid = testCaseResBody.items[0].id;
-                            var opts = getLinkBody(reqid, tcid);
+                    attCount = 0;
+                    step.embeddings.forEach(function (att) {
+                        attCount++;
+                        var attachment = {
+                            name: step.name + " Attachment " + attCount,
+                            "content_type": att.mime_type,
+                            data: att.data
+                        };
+                        console.log("Attachment: " + attachment.name)
 
-                            request.post(opts, function (err, response, resbody) {
-                                if (err) {
-                                    reject(err);
-                                }
-                                else {
-                                    // Success, we added a link!
-                                    emitEvent('SlackEvent', { Linking: "link added for TC: " + testcase.name + " to requirement " + feat[0].issueKey });
-                                }
-                            });
-                        }
+                        attachments.push(attachment);
                     });
                 }
+
+                var expected = step.keyword + " " + step.name;
+
+                if ("location" in step.match) {
+                    expected = step.match.location;
+                }
+
+                var stepLog = {
+                    order: order,
+                    description: step.name,
+                    expected_result: step.keyword,
+                    actual_result: actual,
+                    status: status
+                };
+
+                testStepLogs.push(stepLog);
+                order++;
             });
+
+            reportingLog.attachments = attachments;
+            reportingLog.description = stepNames.join("<br/>");
+            reportingLog.status = TCStatus;
+            reportingLog.test_step_logs = testStepLogs;
+            reportingLog.featureName = featureName;
+            testLogs.push(reportingLog);
         });
+    });
+
+    var formattedResults = {
+        "projectId": projectId,
+        "test-cycle": cycleId,
+        "logs": testLogs
     };
 
-    function getTCBody(TCName) {
-        return {
-            url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/search",
-            json: true,
-            headers: standardHearders,
-            body: {
-                "object_type": "test-cases",
-                "fields": [
-                    "*"
-                ],
-                "query": "Name = '" + TCName + "'"
-            }
-        };
-    }
 
-    function getReqBody(key) {
-        return {
-            url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/search",
-            json: true,
-            headers: standardHearders,
-            body: {
-                "object_type": "requirements",
-                "fields": [
-                    "*"
-                ],
-                "query": "Name ~ '" + key + "'"
-            }
-        };
-    }
+    // Pulse Version
+    // Emit next fxn to upload results/parse
+    emitEvent('UpdateQTestAndScenarioWithFormattedResultsEvent', formattedResults);
 
-    function getLinkBody(reqid, tcid) {
-        return {
-            url: "https://" + constants.ManagerURL + "/api/v3/projects/" + projectId + "/requirements/" + reqid + "/link?type=test-cases",
-            json: true,
-            headers: standardHeaders,
-            body: [
-                tcid
-            ]
-        };
-    }
-
-    createLogsAndTCs
-        .then(function () {
-            linkReq();
-        })
-        .catch(function (err) {
-            emitEvent('SlackEvent', { CaughtError: err });
-        })
+    /// Command line version
+    // Write new file
+    //var payload = fs.writeFile('formattedResults.json', JSON.stringify(formattedResults, null, "  " ), 'utf8', function() {
+    //    console.log("File written: formattedResults.json");
+    //});
 }
