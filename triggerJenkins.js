@@ -1,3 +1,4 @@
+const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 
 exports.handler = function (body, { clientContext: { constants, triggers } }, callback) {
