@@ -54,7 +54,7 @@ const submitTestResults = async (event, qTestConfig) => {
     }
     await submitTestLog(JSON.stringify(requestData), event.projectID, qTestConfig);
 };
-exports.handler = async (event, { clientContext: { constants, triggers } }, callback) => {
+exports.handler = async ({ event, constants, triggers }, context, callback) => {
     await submitTestResults(event, { qTestUrl: constants.qTestUrl, token: constants.qTestToken});
     console.log('Done processing test results.');
 }

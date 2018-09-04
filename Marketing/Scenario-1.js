@@ -52,7 +52,7 @@ const triggerSlackWebhook = (webhook, content) => {
     });
 };
 
-exports.handler = async (body, { clientContext: { constants, triggers } }, callback) => {
+exports.handler = async ({ event: body, constants, triggers }, context, callback) => {
     const slackWebhook = constants.SlackWebHook;  // Slack channel's
     const projectId = constants.ProjectId;        // qTest's, ex: 1
     const qTestUrl = constants.qTestUrl;          // ex: 'http://example.com'
@@ -72,8 +72,8 @@ exports.handler = async (body, { clientContext: { constants, triggers } }, callb
             console.log('Execution completed successfully without triggering any Slack webhook.');
         } else {
             await triggerSlackWebhook(
-                slackWebhook, 
-                `Warning: An issue without any linked test case is moved to 'Done': ${jiraUrl ? `${jiraUrl}/browse/` : ''}${issueKey}`, 
+                slackWebhook,
+                `Warning: An issue without any linked test case is moved to 'Done': ${jiraUrl ? `${jiraUrl}/browse/` : ''}${issueKey}`,
             );
             console.log('A webhook to Slack channel is triggered:', slackWebhook);
         }

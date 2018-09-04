@@ -63,7 +63,7 @@ const buildSlackMessage = (linkedTestCases, qTestUrl, projectId, requirementId, 
     return msg;
 }
 
-exports.handler = async (body, { clientContext: { constants, triggers } }, callback) => {
+exports.handler = async ({ event: body, constants, triggers }, context, callback) => {
     const slackWebhook = constants.SlackWebHook;  // Slack channel's
     const projectId = constants.ProjectId;        // qTest's, ex: 1
     const qTestUrl = constants.qTestUrl;          // ex: 'http://example.com'
@@ -72,7 +72,7 @@ exports.handler = async (body, { clientContext: { constants, triggers } }, callb
     const issueKey = body.issue.key;              // Jira's, ex: 'SKV-2'
     let requirementId;                            // qTest's, ex: '20'
     let linkedTestCases;
-    
+
     try {
         requirementId = await getRequirementId(qTestUrl, projectId, qTestToken, issueKey);
         linkedTestCases = await getLinkedTestCase(qTestUrl, projectId, qTestToken, requirementId);
@@ -84,8 +84,8 @@ exports.handler = async (body, { clientContext: { constants, triggers } }, callb
             console.log('Execution completed successfully without triggering any Slack webhook.');
         } else {
             await triggerSlackWebhook(
-                slackWebhook, 
-                buildSlackMessage(linkedTestCases, qTestUrl, projectId, requirementId, body.changelog.items), 
+                slackWebhook,
+                buildSlackMessage(linkedTestCases, qTestUrl, projectId, requirementId, body.changelog.items),
             );
             console.log('A webhook to Slack channel is triggered:', slackWebhook);
         }

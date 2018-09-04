@@ -66,7 +66,7 @@ const triggerSlackWebhook = async (webhook, content) => {
         });
     });
 };
-exports.handler = async (event, { clientContext: { constants, triggers } }, callback) => {
+exports.handler = async ({ event, constants, triggers }, context, callback) => {
     await submitTestResults(event, { qTestUrl: constants.qTestUrl, token: constants.qTestToken});
     await triggerSlackWebhook(constants.SlackWebhook, 'Created test case in qTest Manager');
     console.log('Done processing test results.');
