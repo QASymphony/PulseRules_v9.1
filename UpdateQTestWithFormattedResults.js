@@ -33,7 +33,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             }
         };
 
-        request.post(opts, function (err, response, resbody) {
+        return request.post(opts, function (err, response, resbody) {
 
             if (err) {
                 Promise.reject(err);
@@ -139,10 +139,10 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     }
 
     createLogsAndTCs()
-        .then(function () {
+        .on('response', function () {
             linkReq();
         })
-        .catch(function (err) {
+        .on('error', function (err) {
             emitEvent('SlackEvent', { CaughtError: err });
         })
 }
