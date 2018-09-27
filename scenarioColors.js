@@ -1,11 +1,13 @@
-const { Webhooks } = require('@qasymphony/pulse-sdk');
+const ScenarioSdk = require('@qasymphony/scenario-sdk');
+
+const Steps = {
+    updateStepResults(qtestToken, scenarioProjectId, name, status) {
+        let stepSdk = new ScenarioSdk.Steps({ qtestToken, scenarioProjectId });
+        return stepSdk.getSteps(`"${name}"`).then(steps => Promise.all(steps.map(step => stepSdk.updateStep(step.id, Object.assign(step, { status })))));
+    }
+};
 
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
-    function emitEvent(name, payload) {
-        let t = triggers.find(t => t.name === name);
-        return t && new Webhooks().invoke(t, payload);
-    }
-
     var payload = body;
     var testLogs = payload.logs;
 
@@ -23,7 +25,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             var stepStatus = _.upperCase(stepStatus);
 
             // Call the pulse API to update step results
-            Steps.updateStepResults(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, stepName, stepStatus);
+            Steps.updateStepResults(constants.QTEST_TOKEN, constants.SCENARIO_PROJECT_ID, stepName, stepStatus);
         }
     }
 }

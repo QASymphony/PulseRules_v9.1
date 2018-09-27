@@ -1,7 +1,14 @@
 const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
+const ScenarioSdk = require('@qasymphony/scenario-sdk');
 
-exports.handler = function ({ event: body, constants, triggers }, context, callback) {
+const Features = {
+    getIssueLinkByFeatureName(qtestToken, scenarioProjectId, name) {
+        return new ScenarioSdk.Features({ qtestToken, scenarioProjectId }).getFeatures(`"${name}"`);
+    }
+};
+
+exports.handler = async function ({ event: body, constants, triggers }, context, callback) {
     function emitEvent(name, payload) {
         let t = triggers.find(t => t.name === name);
         return t && new Webhooks().invoke(t, payload);
@@ -21,7 +28,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     // This makes a best effort to link if test cases exist. Not if you just uploaded via the auto-test-logs endpoint, the job is batched and may not be completed yet
     testLogs.forEach(function (testcase) {
 
-        var feat = Features.getIssueLinkByFeatureName(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, testcase.featureName);
+        var feat = await Features.getIssueLinkByFeatureName(constants.QTEST_TOKEN, constants.SCENARIO_PROJECT_ID, testcase.featureName);
 
         if (feat.length === 0) // No corresponding feature exists in scenario
             return;

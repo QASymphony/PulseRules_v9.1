@@ -1,5 +1,12 @@
 const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
+const ScenarioSdk = require('@qasymphony/scenario-sdk');
+
+const Features = {
+    getIssueLinkByFeatureName(qtestToken, scenarioProjectId, name) {
+        return new ScenarioSdk.Features({ qtestToken, scenarioProjectId }).getFeatures(`"${name}"`);
+    }
+};
 
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
     function emitEvent(name, payload) {
@@ -56,8 +63,8 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     // TODO: This makes a best effort to link. If the TCs aren't uploaded yet, this won't work, but will on subsequent tries
     var linkReq = function () {
 
-        testLogs.forEach(function (testcase) {
-            var feat = Features.getIssueLinkByFeatureName(constants.SCENARIO_ACCOUNT_ID, constants.SCENARIO_PROJECT_ID, testcase.featureName);
+        testLogs.forEach(async function (testcase) {
+            var feat = await Features.getIssueLinkByFeatureName(constants.QTEST_TOKEN, constants.SCENARIO_PROJECT_ID, testcase.featureName);
 
             if (feat.length === 0) // No corresponding feature exists in scenario
                 return;
