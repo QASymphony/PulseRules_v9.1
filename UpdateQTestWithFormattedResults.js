@@ -26,7 +26,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
 
     var standardHearders = {
         'Content-Type': 'application/json',
-        'Authorization': constants.qTestAPIToken
+        'Authorization': `bearer ${constants.QTEST_TOKEN}`
     }
 
     var createLogsAndTCs = function () {

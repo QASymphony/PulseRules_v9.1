@@ -22,7 +22,7 @@ exports.handler = async function ({ event: body, constants, triggers }, context,
 
     var standardHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': constants.qTestAPIToken
+        'Authorization': `bearer ${constants.QTEST_TOKEN}`
     }
 
     // This makes a best effort to link if test cases exist. Not if you just uploaded via the auto-test-logs endpoint, the job is batched and may not be completed yet
