@@ -2,44 +2,51 @@ const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 const ScenarioSdk = require('@qasymphony/scenario-sdk');
 
-const Features = {
-    getIssueLinkByFeatureName(qtestToken, scenarioProjectId, name) {
-        return new ScenarioSdk.Features({ qtestToken, scenarioProjectId }).getFeatures(`"${name}"`);
-    }
-};
-
-exports.handler = async function ({ event: body, constants, triggers }, context, callback) {
+exports.handler = function ({ event: body, constants, triggers }, context, callback) {
     function emitEvent(name, payload) {
         let t = triggers.find(t => t.name === name);
         return t && new Webhooks().invoke(t, payload);
     }
 
-    // Specific to pulse actions
     var payload = body;
-
     var testLogs = payload.logs;
     var projectId = payload.projectId;
 
     var standardHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': `bearer ${constants.QTEST_TOKEN}`
+        'Authorization': `bearer ${constants.QTEST_TOKEN}`,
+        'x-scenario-project-id': constants.SCENARIO_PROJECT_ID
     }
 
+    const options = {
+        url: constants.Scenario_URL + 'features',
+        method: 'GET',
+        headers: standardHeaders
+    };
+
+    var features;
+    request.get(options, function (optserr, optsresponse, resbody) {
+        if (optserr) {
+            console.log("Problem Getting Feature List: " + optserr);
+        }
+        else {
+            console.log("Got Features List: " + resbody);
+            features = JSON.parse(resbody);
+            LinkRequirements();
+        }
+    });
+    
     // This makes a best effort to link if test cases exist. Not if you just uploaded via the auto-test-logs endpoint, the job is batched and may not be completed yet
-    testLogs.forEach(function (testcase) {
-
-        var feat = await Features.getIssueLinkByFeatureName(constants.QTEST_TOKEN, constants.SCENARIO_PROJECT_ID, testcase.featureName);
-
-        if (feat.length === 0) // No corresponding feature exists in scenario
-            return;
-
-        feat.forEach(function (matchingFeature) {
+    function LinkRequirements() {
+        testLogs.forEach(function (testcase) {
+        
+            var matchingFeature = features.find(x => x.name === testcase.featureName);
 
             var reqopts = getReqBody(matchingFeature.issueKey);
             request.post(reqopts, function (err, response, featureResBody) {
 
                 if (err) {
-                    emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Problem getting requirement: " + err });
+                    emitEvent('SlackEvent', { Error: "Problem getting requirement: " + err });
                 }
                 else {
                     if (featureResBody.items.length === 0) // No corresponding feature exists in scenario
@@ -51,7 +58,7 @@ exports.handler = async function ({ event: body, constants, triggers }, context,
                     request.post(tcopts, function (tcerr, tcresponse, testCaseResBody) {
 
                         if (tcerr) {
-                            emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Problem getting test case: " + err });
+                            emitEvent('SlackEvent', { Error: "Problem getting test case: " + err });
                         }
                         else {
                             var tcid = testCaseResBody.items[0].id;
@@ -59,11 +66,11 @@ exports.handler = async function ({ event: body, constants, triggers }, context,
 
                             request.post(linkopts, function (optserr, optsresponse, resbody) {
                                 if (optserr) {
-                                    emitEvent('$YOUR_SLACK_EVENT_NAME', { Error: "Problem creating test link to requirement: " + err });
+                                    emitEvent('SlackEvent', { Error: "Problem creating test link to requirement: " + err });
                                 }
                                 else {
                                     // Success, we added a link!
-                                    emitEvent('$YOUR_SLACK_EVENT_NAME', { Linking: "link added for TC: " + testcase.name + " to requirement " + matchingFeature.issueKey });
+                                    emitEvent('SlackEvent', { Linking: "link added for TC: " + testcase.name + " to requirement " + matchingFeature.issueKey });
                                 }
                             });
                         }
@@ -71,9 +78,7 @@ exports.handler = async function ({ event: body, constants, triggers }, context,
                 }
             });
         });
-
-    });
-
+    }
 
     function getTCBody(TCName) {
         return {

@@ -7,24 +7,12 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     }
 
     // Payload to be passed in: json style cucumber for java test results
-
-    /////// Pulse version
     var payload = body;
     var testResults = payload.result;
     var projectId = payload.projectId;
     var cycleId = payload["test-cycle"];
 
-    //////// Commandline version
-    //var fs = require('fs');
-    //var testResults = JSON.parse(fs.readFileSync('/Users/elise/Repos/cucumber-bdd/target/cucumber-report.json', 'utf8'));
-    //var projectId = 60676; // Pulse Automation Project
-    //var cycleId = 821416; // Pulse Automation Project
-    /// TODO: Remove above
-
     var testLogs = [];
-    //console.log("TEST RESULTS: " + testResults);
-
-    //emitEvent('SlackEvent', { TESTRESULTS: testResults });
 
     testResults.forEach(function (feature) {
         var featureName = feature.name;
@@ -119,14 +107,5 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         "logs": testLogs
     };
 
-
-    // Pulse Version
-    // Emit next fxn to upload results/parse
-    emitEvent('UpdateQTestAndScenarioWithFormattedResultsEvent', formattedResults);
-
-    /// Command line version
-    // Write new file
-    //var payload = fs.writeFile('formattedResults.json', JSON.stringify(formattedResults, null, "  " ), 'utf8', function() {
-    //    console.log("File written: formattedResults.json");
-    //});
+    emitEvent('UpdateQTestWithFormattedResultsEvent', formattedResults);
 }
