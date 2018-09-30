@@ -2,13 +2,17 @@ const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 const ScenarioSdk = require('@qasymphony/scenario-sdk');
 
+console.log("Starting Link Requirements Action");
+    
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
+    
     function emitEvent(name, payload) {
         let t = triggers.find(t => t.name === name);
         return t && new Webhooks().invoke(t, payload);
     }
-
+    // Specific to pulse actions
     var payload = body;
+
     var testLogs = payload.logs;
     var projectId = payload.projectId;
 
@@ -40,44 +44,48 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     function LinkRequirements() {
         testLogs.forEach(function (testcase) {
         
-            var matchingFeature = features.find(x => x.name === testcase.featureName);
+        var matchingFeature = features.find(x => x.name === testcase.featureName);
 
-            var reqopts = getReqBody(matchingFeature.issueKey);
-            request.post(reqopts, function (err, response, featureResBody) {
+        var reqopts = getReqBody(matchingFeature.issueKey);
+        request.post(reqopts, function (err, response, featureResBody) {
 
-                if (err) {
-                    emitEvent('SlackEvent', { Error: "Problem getting requirement: " + err });
-                }
-                else {
-                    if (featureResBody.items.length === 0) // No corresponding feature exists in scenario
-                        return;
+            if (err) {
+                emitEvent('SlackEvent', { Error: "Problem getting requirement: " + err });
+            }
+            else {
+                if (featureResBody.items.length === 0) // No corresponding feature exists in scenario
+                    return;
 
-                    var reqid = featureResBody.items[0].id;
-                    var tcopts = getTCBody(testcase.name);
+                var reqid = featureResBody.items[0].id;
+                var tcopts = getTCBody(testcase.name);
 
-                    request.post(tcopts, function (tcerr, tcresponse, testCaseResBody) {
+                request.post(tcopts, function (tcerr, tcresponse, testCaseResBody) {
 
-                        if (tcerr) {
-                            emitEvent('SlackEvent', { Error: "Problem getting test case: " + err });
-                        }
-                        else {
-                            var tcid = testCaseResBody.items[0].id;
-                            var linkopts = getLinkBody(reqid, tcid);
+                    if (tcerr) {
+                        emitEvent('SlackEvent', { Error: "Problem getting test case: " + err });
+                    }
+                    else {
+                        if(testCaseResBody.items.length === 0) // Test Case Doesn't yet exist - we'll try this another time
+                            return;
 
-                            request.post(linkopts, function (optserr, optsresponse, resbody) {
-                                if (optserr) {
-                                    emitEvent('SlackEvent', { Error: "Problem creating test link to requirement: " + err });
-                                }
-                                else {
-                                    // Success, we added a link!
-                                    emitEvent('SlackEvent', { Linking: "link added for TC: " + testcase.name + " to requirement " + matchingFeature.issueKey });
-                                }
-                            });
-                        }
-                    });
-                }
-            });
+                        var tcid = testCaseResBody.items[0].id;
+                        var linkopts = getLinkBody(reqid, tcid);
+
+                        request.post(linkopts, function (optserr, optsresponse, resbody) {
+                            if (optserr) {
+                                emitEvent('SlackEvent', { Error: "Problem creating test link to requirement: " + err });
+                            }
+                            else {
+                                // Success, we added a link!
+                                emitEvent('SlackEvent', { Linking: "link added for TC: " + testcase.name + " to requirement " + matchingFeature.issueKey });
+                            }
+                        });
+                    }
+                });
+            }
         });
+    });
+
     }
 
     function getTCBody(TCName) {
