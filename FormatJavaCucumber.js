@@ -13,7 +13,6 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     var cycleId = payload["test-cycle"];
 
     var testLogs = [];
-
     testResults.forEach(function (feature) {
         var featureName = feature.name;
         feature.elements.forEach(function (testCase) {
@@ -107,5 +106,8 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         "logs": testLogs
     };
 
+    // Pulse Version
+    // Emit next fxn to upload results/parse
     emitEvent('UpdateQTestWithFormattedResultsEvent', formattedResults);
+
 }
