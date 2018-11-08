@@ -8,7 +8,11 @@ const StepSdk = {
 
 const Steps = {
     updateStepResults(stepSdk, name, status) {
-        return stepSdk.getSteps(`"${name}"`).then(steps => Promise.all(steps.map(step => stepSdk.updateStep(step.id, Object.assign(step, { status })))));
+        return stepSdk.getSteps(`"${name}"`).
+            then(steps => Promise.all(steps.map(step => stepSdk.updateStep(step.id, Object.assign(step, { status })))))
+            .catch(function (err) {
+                console.log('Error updating colors: ' + err);
+            });
     }
 };
 

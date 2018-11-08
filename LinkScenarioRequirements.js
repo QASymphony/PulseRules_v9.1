@@ -46,6 +46,9 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         
         var matchingFeature = features.find(x => x.name === testcase.featureName);
 
+        if(!matchingFeature)
+            return;
+            
         var reqopts = getReqBody(matchingFeature.issueKey);
         request.post(reqopts, function (err, response, featureResBody) {
 
