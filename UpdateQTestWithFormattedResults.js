@@ -46,6 +46,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 Promise.reject(err);
             }
             else {
+                console.log('response from qTest Manager:', JSON.stringify(response))
                 emitEvent('SlackEvent', { AutomationLogUploaded: resbody });
 
                 if (response.body.type == "AUTOMATION_TEST_LOG") {
