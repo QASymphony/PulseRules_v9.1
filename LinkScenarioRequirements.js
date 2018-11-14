@@ -23,7 +23,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     }
 
     const options = {
-        url: constants.Scenario_URL + 'features',
+        url: constants.Scenario_URL + '/api/features',
         method: 'GET',
         headers: standardHeaders
     };
@@ -56,8 +56,10 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 emitEvent('SlackEvent', { Error: "Problem getting requirement: " + err });
             }
             else {
-                if (featureResBody.items.length === 0) // No corresponding feature exists in scenario
+                if (featureResBody.items.length === 0) { // No corresponding feature exists in scenario
+                    console.log('[Info] No featureResBody item found')
                     return;
+                }
 
                 var reqid = featureResBody.items[0].id;
                 var tcopts = getTCBody(testcase.name);
@@ -68,18 +70,22 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                         emitEvent('SlackEvent', { Error: "Problem getting test case: " + err });
                     }
                     else {
-                        if(testCaseResBody.items.length === 0) // Test Case Doesn't yet exist - we'll try this another time
+                        if(testCaseResBody.items.length === 0) { // Test Case Doesn't yet exist - we'll try this another time
+                            console.log('[Info] No testCaseResBody item found')
                             return;
+                        }
 
                         var tcid = testCaseResBody.items[0].id;
                         var linkopts = getLinkBody(reqid, tcid);
 
                         request.post(linkopts, function (optserr, optsresponse, resbody) {
                             if (optserr) {
+                                console.log('[Error] A link is failed to be added.', optserr)
                                 emitEvent('SlackEvent', { Error: "Problem creating test link to requirement: " + err });
                             }
                             else {
                                 // Success, we added a link!
+                                console.log('[Info] A link is added')
                                 emitEvent('SlackEvent', { Linking: "link added for TC: " + testcase.name + " to requirement " + matchingFeature.issueKey });
                             }
                         });
