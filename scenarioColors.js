@@ -7,8 +7,8 @@ const StepSdk = {
 }
 
 const Steps = {
-    updateStepResults(stepSdk, name, status) {
-        return stepSdk.getSteps(`"${name}"`).
+    updateStepResults(stepSdk, name, status, issueId = null, keyword = null) {
+        return stepSdk.getSteps(name, status, keyword, issueId).
             then(steps => Promise.all(steps.map(step => stepSdk.updateStep(step.id, Object.assign(step, { status })))))
             .catch(function (err) {
                 console.log('Error updating colors: ' + err);
@@ -26,6 +26,8 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         for (var step of res["test_step_logs"]) {
             var stepName = step.description;
             var stepStatus = step.status;
+            var stepKeyword = step.keyword;
+            var issueId = step.issueId;
 
             // Undefined means no step definition existed and it should fail
             if (stepStatus == "undefined") {
@@ -36,7 +38,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             stepStatus = stepStatus.toUpperCase();
 
             // Call the pulse API to update step results
-            Steps.updateStepResults(stepSdk, stepName, stepStatus);
+            Steps.updateStepResults(stepSdk, stepName, stepStatus, issueId, stepKeyword);
         }
     }
 }
