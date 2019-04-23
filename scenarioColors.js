@@ -8,10 +8,10 @@ const StepSdk = {
 
 const Steps = {
     updateStepResults(stepSdk, name, status, issueId = null, keyword = null) {
-        return stepSdk.getSteps(name, status, keyword, issueId). // issueId only available from Pulse v9.2
+        return stepSdk.getSteps(name, keyword, issueId). // issueId only available from Pulse v9.2
             then(steps => Promise.all(steps.map(step => stepSdk.updateStep(step.id, Object.assign(step, { status })))))
             .catch(function (err) {
-                console.log('Error updating colors: ' + err);
+                console.log('Error updating colors: ', err);
             });
     }
 };
