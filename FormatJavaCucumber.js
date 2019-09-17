@@ -1,3 +1,19 @@
+/**
+ * payload sample at TestResultExamples/JavaCucumberPayloadSample.json
+ * payload format:
+ * {
+     {number} projectId - Your Qtest project id
+     {number} test-cycle - Your Qtest test cycle id
+     {array} result - Your test result(JSON) from Cucumber
+ * }
+ * Constant:
+ * - ManagerURL: Your qtest url (i.e techsupport.qtestnet.com)
+ * - QTEST_TOKEN: Your qtest token (i.e 1038cf25-4e14-4332-bcb0-7444cd747905)
+ * outputs:
+ * - The Formatted result look like can be found in the ExampleFormattedResults.json file
+ * - The action "UpdateQTestWithFormattedResults" will be called with the formatted result
+ */
+
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
@@ -10,7 +26,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     var payload = body;
     var testResults = payload.result;
     var projectId = payload.projectId;
-    var cycleId = payload["test-cycle"];
+    var testCycleId = payload["test-cycle"];
 
     var testLogs = [];
     testResults.forEach(function (feature) {
@@ -20,7 +36,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             if (!testCase.name)
                 testCase.name = "Unnamed";
 
-            TCStatus = "passed";
+            var TCStatus = "passed";
 
             var reportingLog = {
                 exe_start_date: new Date(), // TODO These could be passed in
@@ -33,9 +49,9 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             };
 
             var testStepLogs = [];
-            order = 0;
-            stepNames = [];
-            attachments = [];
+            var order = 0;
+            var stepNames = [];
+            var attachments = [];
 
             testCase.steps.forEach(function (step) {
                 stepNames.push(step.name);
@@ -59,7 +75,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 if ("embeddings" in step) {
                     console.log("Has attachment");
 
-                    attCount = 0;
+                    var attCount = 0;
                     step.embeddings.forEach(function (att) {
                         attCount++;
                         var attachment = {
@@ -102,12 +118,13 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
 
     var formattedResults = {
         "projectId": projectId,
-        "test-cycle": cycleId,
+        "test-cycle": testCycleId,
         "logs": testLogs
     };
+    console.log("FORMATTED RESULTS: " + JSON.stringify(formattedResults));
 
     // Pulse Version
     // Emit next fxn to upload results/parse
     emitEvent('UpdateQTestWithFormattedResultsEvent', formattedResults);
 
-}
+};
