@@ -1,11 +1,25 @@
+/**
+ * payload sample at ExampleFormattedResults.json
+ * Constant:
+ * - ManagerURL: Your qtest url (i.e techsupport.qtestnet.com)
+ * - QTEST_TOKEN: Your qtest token (i.e 1038cf25-4e14-4332-bcb0-7444cd747905)
+ * - ProjectID: Your qtest project id (i.e 229509)
+ * - SCENARIO_PROJECT_ID: Your scenario project id (i.e eeac6a6a-8abf-4572-a798-dfc266278c12)
+ * - Scenario_URL: Your Scenario URL (i.e https://scenario.qas-labs.com)
+ * outputs:
+ * - Link an existing qTest Test Case to a Jira requirement if the test case name and feature name of Jira issue matching.
+ * Note:
+ * - Jira & qTest integration is already set up and that Jira Issue already exists in qTest as a requirement
+ * - scenario feature name of Jira issue
+ */
+
 const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
-const ScenarioSdk = require('@qasymphony/scenario-sdk');
 
 console.log("Starting Link Requirements Action");
-    
+
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
-    
+
     function emitEvent(name, payload) {
         let t = triggers.find(t => t.name === name);
         return t && new Webhooks().invoke(t, payload);
@@ -57,7 +71,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             }
             else {
                 if (featureResBody.items.length === 0) { // No corresponding feature exists in scenario
-                    console.log('[Info] No featureResBody item found')
+                    console.log('[Info] No featureResBody item found');
                     return;
                 }
 
@@ -85,7 +99,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                             }
                             else {
                                 // Success, we added a link!
-                                console.log('[Info] A link is added')
+                                console.log('[Info] A link is added');
                                 emitEvent('SlackEvent', { Linking: "link added for TC: " + testcase.name + " to requirement " + matchingFeature.issueKey });
                             }
                         });
@@ -137,4 +151,4 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
             ]
         };
     }
-}
+};
