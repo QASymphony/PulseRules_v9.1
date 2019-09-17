@@ -1,3 +1,16 @@
+/**
+ * payload sample at ExampleFormattedResults.json
+ * Constant:
+ * - ManagerURL: Your qtest url (i.e techsupport.qtestnet.com)
+ * - QTEST_TOKEN: Your qtest token (i.e 1038cf25-4e14-4332-bcb0-7444cd747905)
+ * - SlackWebHook: Your slack webhook
+ * outputs:
+ * - Upload test cases, test runs, and test logs to qTest Manager
+ * - The action "LinkScenarioRequirements" will be called to tie requirements to test case if the names match.
+ * Note:
+ * - Automation Integration must be active in Qtest setting (Automation Settings) and have to setting Automation status map
+ */
+
 const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 const ScenarioSdk = require('@qasymphony/scenario-sdk');
@@ -46,7 +59,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 Promise.reject(err);
             }
             else {
-                console.log('response from qTest Manager:', JSON.stringify(response))
+                console.log(response.statusCode === 201 ? 'Update success!' : 'error: ' + resbody.message);
                 emitEvent('SlackEvent', { AutomationLogUploaded: resbody });
 
                 if (response.body.type == "AUTOMATION_TEST_LOG") {
@@ -69,4 +82,4 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         .on('error', function (err) {
             emitEvent('SlackEvent', { CaughtError: err });
         })
-}
+};
