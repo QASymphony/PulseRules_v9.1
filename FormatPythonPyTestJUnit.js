@@ -1,3 +1,21 @@
+/**
+ * payload sample at TestResultExamples/TestJUnitPayloadSample.json
+ * payload example:
+ * {
+     {number} projectId - Your Qtest project id
+     {number} test-cycle - Your Qtest test cycle id
+     {string} result - Your Test Execution Results in XML Format
+ * }
+ * Constant:
+ * - ManagerURL: Your qtest url (i.e techsupport.qtestnet.com)
+ * - QTEST_TOKEN: Your qtest token (i.e 1038cf25-4e14-4332-bcb0-7444cd747905)
+ * outputs:
+ * - The Formatted result look like can be found in the ExampleFormattedResults.json file
+ * - The action "UpdateQTestWithFormattedResults" will be called with the formatted result
+ * Note:
+ * - Automation Integration must be active in Qtest setting (Automation Settings) and have to setting Automation status map
+ */
+
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
@@ -10,16 +28,9 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     var payload = body;
     var testResults = payload.result;
     var projectId = payload.projectId;
-    var cycleId = payload["test-cycle"];
+    var testCycleId = payload["test-cycle"];
 
-    xml2js = require('xml2js');
-
-    //////// Commandline version
-    // var fs = require('fs');
-    //
-    // var projectId = 12345;
-    // var cycleId = 12341234;
-    /// TODO: Remove above
+    const xml2js = require('xml2js');
 
     var testLogs = [];
     function FormatLogs(tr) {
@@ -37,7 +48,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 tcName = tcResult.name.substring(0, tcResult.name.indexOf('['));
             note = tcResult.name;
 
-            TCStatus = "PASS";
+            var TCStatus = "PASS";
 
             if (tc.failure) {
                 TCStatus = "FAIL";
@@ -71,7 +82,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 status: TCStatus
             }];
 
-            reportingLog.description = "Test case imported from Python Test"
+            reportingLog.description = "Test case imported from Python Test";
             reportingLog.status = TCStatus;
             reportingLog.test_step_logs = testStepLogs;
             testLogs.push(reportingLog);
@@ -79,7 +90,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
 
         var formattedResults = {
             "projectId": projectId,
-            "test-cycle": cycleId,
+            "test-cycle": testCycleId,
             "logs": testLogs
         };
 
@@ -90,7 +101,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     var parser = new xml2js.Parser();
     parser.parseString(testResults, function (err, result) {
         var formattedResults = FormatLogs(JSON.stringify(result));
-        emitEvent('$YOUR_UPLOAD_TO_QTEST_EVENT_URL', formattedResults);
+        emitEvent('UpdateQTestWithFormattedResultsEvent', formattedResults);
     });
 
     /// Command line version
@@ -103,4 +114,4 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
     //         });
     //     });
     // });
-}
+};

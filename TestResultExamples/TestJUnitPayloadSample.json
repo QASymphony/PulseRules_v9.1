@@ -1,0 +1,5 @@
+{
+  "projectId": 229509,
+  "test-cycle": 1940269,
+  "result": "<?xml version = \"1.0\" encoding = \"utf-8\"?>\n<testsuite errors = \"0\" failures = \"1\"\nname = \"pytest\" skips = \"0\" tests = \"4\" time = \"0.061\">\n   <testcase classname = \"test_multiplication\"          \n      file = \"test_multiplication.py\"\n      line = \"2\" name = \"test_multiplication_11[1-11]\"\n      time = \"0.00117516517639\">\n   </testcase>\n   \n   <testcase classname = \"test_multiplication\"    \n      file = \"test_multiplication.py\"\n      line = \"2\" name = \"test_multiplication_11[2-22]\"\n      time = \"0.00155973434448\">\n   </testcase>\n\n   <testcase classname = \"test_multiplication\" \n      file = \"test_multiplication.py\"\n      line = \"2\" name = \"test_multiplication_11[3-35]\" time = \"0.00144290924072\">\n   </testcase>\n   <testcase classname = \"test_multiplication\" \n      file = \"test_multiplication.py\"\n      line = \"2\" name = \"test_multiplication_11[4-44]\"\n      time = \"0.000945091247559\">\n   </testcase>\n</testsuite>"
+}
