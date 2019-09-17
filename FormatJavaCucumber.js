@@ -9,9 +9,11 @@
  * Constant:
  * - ManagerURL: Your qtest url (i.e techsupport.qtestnet.com)
  * - QTEST_TOKEN: Your qtest token (i.e 1038cf25-4e14-4332-bcb0-7444cd747905)
- * outputs:
+ * Outputs:
  * - The Formatted result look like can be found in the ExampleFormattedResults.json file
  * - The action "UpdateQTestWithFormattedResults" will be called with the formatted result
+ * Note:
+ * - Automation Integration must be active in Qtest setting (Automation Settings) and have to setting Automation status map
  */
 
 const { Webhooks } = require('@qasymphony/pulse-sdk');
@@ -121,7 +123,6 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         "test-cycle": testCycleId,
         "logs": testLogs
     };
-    console.log("FORMATTED RESULTS: " + JSON.stringify(formattedResults));
 
     // Pulse Version
     // Emit next fxn to upload results/parse
