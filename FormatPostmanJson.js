@@ -1,3 +1,21 @@
+/**
+ * payload sample at TestResultExamples/PostmanPayloadSample.json
+ * payload example:
+ * {
+     {number} projectId - Your Qtest project id
+     {number} test-cycle - Your Qtest test cycle id
+     {object} result - Your test result(JSON) from Postman
+ * }
+ * Constant:
+ * - ManagerURL: Your qtest url (i.e techsupport.qtestnet.com)
+ * - QTEST_TOKEN: Your qtest token (i.e 1038cf25-4e14-4332-bcb0-7444cd747905)
+ * outputs:
+ * - The Formatted result look like can be found in the ExampleFormattedResults.json file
+ * - The action "UpdateQTestWithFormattedResults" will be called with the formatted result
+ * Note:
+ * - Automation Integration must be active in Qtest setting (Automation Settings) and have to setting Automation status map
+ */
+
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 
 exports.handler = function ({ event: body, constants, triggers }, context, callback) {
@@ -6,13 +24,11 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         return t && new Webhooks().invoke(t, payload);
     }
 
-    // Payload to be passed in: json style cucumber for java test results
-
     /////// Pulse version
     var payload = body;
     var testResults = payload.result;
     var projectId = payload.projectId;
-    var cycleId = payload["test-cycle"];
+    var testCycleId = payload["test-cycle"];
 
     var collectionName = testResults.collection.info.name;
     var testLogs = [];
@@ -21,7 +37,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
 
         var featureName = testCase.item.name;
 
-        TCStatus = "passed";
+        var TCStatus = "passed";
         var reportingLog = {
             exe_start_date: new Date(), // TODO These could be passed in
             exe_end_date: new Date(),
@@ -33,8 +49,8 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         };
 
         var testStepLogs = [];
-        order = 0;
-        stepNames = [];
+        var order = 0;
+        var stepNames = [];
 
         if (!("assertions" in testCase)) {
             return;
@@ -42,7 +58,7 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
 
         testCase.assertions.forEach(function (step) {
             stepNames.push(step.assertion);
-            stepErrorVal = "passed";
+            var stepErrorVal = "passed";
 
             var actual = step.assertion;
 
@@ -74,11 +90,10 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
 
     var formattedResults = {
         "projectId": projectId,
-        "test-cycle": cycleId,
+        "test-cycle": testCycleId,
         "logs": testLogs
     };
 
-
     // Pulse Version
-    emitEvent('$YOUR_UPLOAD_TO_QTEST_EVENT_URL', formattedResults);
-}
+    emitEvent('UpdateQTestWithFormattedResultsEvent', formattedResults);
+};
