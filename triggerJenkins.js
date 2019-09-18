@@ -1,3 +1,16 @@
+/**
+ * Constant:
+ * - SlackWebHook: Your slack webhook
+ * - JenkinsUserName
+ * - JenkinsAPIToken
+ * - JenkinsURL
+ * - JenkinsJobName
+ * outputs:
+ * - Triggers a Jenkins Job
+ * Note:
+ * - Note that your jenkins instance needs to be configured to allow a remove trigger. Verify with CURL before using this action from Pulse.
+ */
+
 const request = require('request');
 const { Webhooks } = require('@qasymphony/pulse-sdk');
 
@@ -23,11 +36,11 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 headers: {
                     "Jenkins-Crumb": crumb
                 }
-            }
+            };
 
             request.post(opts, function (err, res, bd) {
-                emitEvent('$YOUR_SLACK_EVENT_NAME', { JenkinsCallSuccess: "Jenkins Build just kicked off for project " + constants.JenkinsJobName });
+                emitEvent('SlackEvent', { JenkinsCallSuccess: "Jenkins Build just kicked off for project " + constants.JenkinsJobName });
             })
         }
     })
-}
+};
