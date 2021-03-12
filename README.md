@@ -1,3 +1,8 @@
+| :warning: WARNING: This repository is going away. Please move to https://github.com/QASymphony/pulse-community! |
+| --- |
+
+
+
 # Pulse Rules
 
 ## Default/Sample Pulse rules for your enjoyment
